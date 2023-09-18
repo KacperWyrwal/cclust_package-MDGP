@@ -58,7 +58,7 @@ class SphericalKmeans:
     """
 
     def __init__(self, n_clusters=2, init=None, max_iter=20, n_init=1,
-                 tol=1e-9, random_state=None, weighting=True):
+                 tol=1e-9, random_state=None, weighting=True, verbosity=0):
         self.n_clusters = n_clusters
         self.init = init
         self.max_iter = max_iter
@@ -71,6 +71,8 @@ class SphericalKmeans:
         self.weighting = weighting
         self.Z = None
         self.Z_fuzzy = None
+        self.centers = None # TODO fork
+        self.verbosity = verbosity
 
     def fit(self, X, y=None):
         """Perform clustering.
@@ -102,7 +104,8 @@ class SphericalKmeans:
         random_state = check_random_state(self.random_state)
         seeds = random_state.randint(np.iinfo(np.int32).max, size=self.n_init)
         for seed in seeds:
-            print(" == New init == ")
+            if self.verbosity > 0:
+                print(" == New init == ")
             self.random_state = seed
             self._fit_single(X)
             # remember attributes corresponding to the best criterion
@@ -112,6 +115,7 @@ class SphericalKmeans:
                 labels_ = self.labels_
                 z = self.Z
                 z_fuzzy = self.Z_fuzzy
+                centers = self.centers # TODO fork
 
         self.random_state = random_state
 
@@ -121,6 +125,8 @@ class SphericalKmeans:
         self.row_labels_ = labels_
         self.Z = z
         self.Z_fuzzy = z_fuzzy
+        self.centers = centers # TODO fork
+        return self # TODO fork
 
     def _fit_single(self, X, y=None):
         """Perform one run of clustering.
@@ -148,7 +154,8 @@ class SphericalKmeans:
         n_iter = 0
 
         while change and n_iter < self.max_iter:
-            print("iteration:", n_iter)
+            if self.verbosity > 0:
+                print("iteration:", n_iter)
             change = False
 
             # compute centroids (in fact only summation along cols)
@@ -174,7 +181,8 @@ class SphericalKmeans:
                 c_init = c
                 change = True
                 c_list.append(c)
-                print(c)
+                if self.verbosity > 0:
+                    print(c)
             n_iter += 1
 
         self.criterion = c
@@ -183,3 +191,4 @@ class SphericalKmeans:
         self.labels_ = [item for sublist in part for item in sublist]
         self.Z = Z
         self.Z_fuzzy = Z1
+        self.centers = centers # TODO fork 
